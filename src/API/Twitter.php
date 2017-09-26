@@ -46,10 +46,10 @@ class Twitter
     public function __construct($count = 20, $excludeReplies = true)
     {
         $this->count = intval($count);
-        $this->consumerKey = env('TWITTER_CONSUMER_KEY');
-        $this->consumerSecret = env('TWITTER_CONSUMER_SECRET');
-        $this->accessToken = env('TWITTER_ACCESS_TOKEN');
-        $this->accessTokenSecret = env('TWITTER_ACCESS_TOKEN_SECRET');
+        $this->consumerKey = getenv('TWITTER_CONSUMER_KEY');
+        $this->consumerSecret = getenv('TWITTER_CONSUMER_SECRET');
+        $this->accessToken = getenv('TWITTER_ACCESS_TOKEN');
+        $this->accessTokenSecret = getenv('TWITTER_ACCESS_TOKEN_SECRET');
         $this->excludeReplies = boolval($excludeReplies);
     }
 

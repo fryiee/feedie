@@ -35,8 +35,8 @@ class Instagram
      */
     public function __construct($count = 20)
     {
-        $this->user = env('INSTAGRAM_USER_ID');
-        $this->token = env('INSTAGRAM_TOKEN');
+        $this->user = getenv('INSTAGRAM_USER_ID');
+        $this->token = getenv('INSTAGRAM_TOKEN');
         $this->count = intval($count);
     }
 
