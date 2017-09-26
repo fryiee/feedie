@@ -1,0 +1,19 @@
+{
+  "name": "fryiee/feedie",
+  "description": "A combined Instagram Twitter social feed.",
+  "authors": [
+    {
+      "name": "Craig Berry",
+      "email": "hi@craigberry.co"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Fryiee\\Feedie\\": "src/"
+    }
+  },
+  "require": {
+    "vlucas/phpdotenv": "^2.4",
+    "abraham/twitteroauth": "^0.7.3"
+  }
+}
