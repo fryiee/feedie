@@ -9,12 +9,25 @@ use Fryiee\Feedie\API\Instagram;
  */
 class Social
 {
+    /**
+     * @var int
+     */
+    private $count;
+
+    /**
+     * Social constructor.
+     * @param int $count
+     */
+    public function __construct($count = 10)
+    {
+        $this->count = $count;
+    }
 
     public function generateCombinedFeed()
     {
         // do social media loop
-        $twitter = new Twitter(10);
-        $instagram = new Instagram(10);
+        $twitter = new Twitter($this->count / 2);
+        $instagram = new Instagram($this->count / 2);
 
         $normalisedTwitter = $this->normaliseFeed('twitter', $twitter->getFeed());
         $normalisedInstagram = $this->normaliseFeed('instagram', $instagram->getFeed());
