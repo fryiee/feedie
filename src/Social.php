@@ -64,6 +64,7 @@ class Social
                 if ($type == 'twitter') {
                     $normalisedPost['link'] = 'https://twitter.com/'.$post->user->screen_name.'/status/'.$post->id;
                     $normalisedPost['text'] = $this->linkifyTweet($post);
+                    $normalisedPost['raw_text'] = $post->text;
                 } else {
                     $normalisedPost['link'] = $post->link;
                     $normalisedPost['image'] = $post->images->standard_resolution->url;
