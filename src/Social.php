@@ -150,13 +150,11 @@ class Social
      */
     private function getCachedFeed()
     {
-        try {
-            $cache = file_get_contents($this->getCache());
-        } catch (\Exception $e) {
-            $cache = false;
+        if (file_exists($this->getCache())) {
+            $cache = json_decode(file_get_contents($this->getCache()), true);
         }
 
-        return $cache ? json_decode($cache, true) : $this->makeFeed();
+        return isset($cache) ? $cache : $this->makeFeed();
     }
 
     /**
