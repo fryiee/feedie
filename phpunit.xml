@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<phpunit bootstrap="vendor/autoload.php" colors="true">
+    <testsuites>
+        <testsuite name="Feedie Test Suite">
+            <directory>tests/</directory>
+        </testsuite>
+    </testsuites>
+
+    <filter>
+        <whitelist>
+            <directory suffix=".php">src/</directory>
+        </whitelist>
+    </filter>
+
+    <php>
+        <ini name="date.timezone" value="UTC"/>
+        <env name="FEEDIE_CACHE" value="true"/>
+        <env name="FEEDIE_CACHE_AMOUNT" value="20"/>
+        <env name="FEEDIE_CACHE_TIME" value="60"/>
+        <env name="FEEDIE_INSTAGRAM_USER" value="12345678"/>
+        <env name="FEEDIE_INSTAGRAM_TOKEN" value="12345678.2c8e93c.a22a45edcb3742feb53b0b9374bea24c"/>
+        <env name="FEEDIE_TWITTER_CONSUMER_KEY" value="12345678.2c8e93c.a22a45edcb3742feb53b0b9374bea24c"/>
+        <env name="FEEDIE_TWITTER_CONSUMER_SECRET" value="12345678.2c8e93c.a22a45edcb3742feb53b0b9374bea24c"/>
+        <env name="FEEDIE_TWITTER_ACCESS_TOKEN" value="12345678.2c8e93c.a22a45edcb3742feb53b0b9374bea24c"/>
+        <env name="FEEDIE_TWITTER_ACCESS_TOKEN_SECRET" value="12345678.2c8e93c.a22a45edcb3742feb53b0b9374bea24c"/>
+    </php>
+</phpunit>

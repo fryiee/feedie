@@ -15,129 +15,93 @@ class Social
     private $count;
 
     /**
+     * @var string
+     */
+    private $cache;
+
+    /**
+     * @var bool
+     */
+    private $useCache;
+
+    /**
+     * @var int
+     */
+    private $cacheNumber;
+
+    /**
+     * @var int
+     */
+    private $cacheTime;
+
+    /**
      * Social constructor.
      * @param int $count
      */
     public function __construct($count = 10)
     {
         $this->count = $count;
+        $this->useCache = (!is_null(getenv('FEEDIE_CACHE')) ? boolval(getenv('FEEDIE_CACHE')) : true);
+        $this->cacheNumber = intval(getenv('FEEDIE_CACHE_AMOUNT')) ?: 20;
+        $this->cacheTime = intval(getenv('FEEDIE_CACHE_TIME')) ?: 60;
+
+        $cacheDir = getenv('FEEDIE_CACHE_DIR');
+        if ($cacheDir && file_exists($cacheDir)) {
+            $this->cache = $cacheDir . '/feedie.json';
+        } else {
+            $this->cache = (ini_get('upload_tmp_dir') ?: sys_get_temp_dir()) .'/feedie.json';
+        }
     }
 
-    public function generateCombinedFeed()
+    /**
+     * The main method for retrieving a combined feed.
+     *
+     * @return array
+     */
+    public function getFeed()
+    {
+        return ($this->useCache ? $this->getCachedFeed() : $this->makeFeed());
+    }
+
+    /**
+     * This returns a cached feed if it exists and is not invalid.
+     *
+     * @return array
+     */
+    private function getCachedFeed()
+    {
+        $cache = json_decode(file_get_contents($this->cache), true);
+
+        return $cache ?: $this->makeFeed();
+    }
+
+    /**
+     * Make the combined feed and cache if necessary.
+     *
+     * @return array
+     */
+    private function makeFeed()
     {
         // do social media loop
-        $twitter = new Twitter($this->count / 2);
-        $instagram = new Instagram($this->count / 2);
+        $twitter = (new Twitter($this->count / 2))->getFeed();
+        $instagram = (new Instagram($this->count / 2))->getFeed();
 
-        $normalisedTwitter = $this->normaliseFeed('twitter', $twitter->getFeed());
-        $normalisedInstagram = $this->normaliseFeed('instagram', $instagram->getFeed());
-
-        $combinedFeed = array_merge($normalisedTwitter, $normalisedInstagram);
+        $combinedFeed = array_merge($twitter, $instagram);
 
         usort($combinedFeed, function ($item1, $item2) {
             if ($item1['date'] == $item2['date']) {
                 return 0;
             }
+
             return $item1['date'] > $item2['date'] ? -1 : 1;
         });
 
+        if ($this->useCache) {
+            if (!file_exists($this->cache) || filemtime($this->cache) + $this->cacheTime < time()) {
+                file_put_contents($this->cache, json_encode($combinedFeed));
+            }
+        }
+
         return $combinedFeed;
-    }
-
-    public function normaliseFeed($type, $feed)
-    {
-        $normalisedFeed = [];
-
-        if (count($feed) > 0) {
-            foreach ($feed as $post) {
-                $normalisedPost = [
-                    'id' => $post->id,
-                    'type' => $type
-                ];
-
-                if (isset($post->created_at)) {
-                    $normalisedPost['date'] = strtotime($post->created_at);
-                } elseif (isset($post->created_time)) {
-                    $normalisedPost['date'] = intval($post->created_time);
-                }
-
-                if ($type == 'twitter') {
-                    $normalisedPost['link'] = 'https://twitter.com/'.$post->user->screen_name.'/status/'.$post->id;
-                    $normalisedPost['text'] = $this->linkifyTweet($post);
-                    $normalisedPost['raw_text'] = $post->text;
-                } else {
-                    $normalisedPost['link'] = $post->link;
-                    $normalisedPost['image'] = $post->images->standard_resolution->url;
-                }
-
-                $normalisedFeed[] = $normalisedPost;
-            }
-        }
-
-        return $normalisedFeed;
-    }
-
-    private function linkifyTweet($tweetObject)
-    {
-        $text = $tweetObject->text;
-
-        $linkified = array();
-        foreach ($tweetObject->entities->hashtags as $hashtag) {
-            $hash = $hashtag->text;
-
-            if (in_array($hash, $linkified)) {
-                continue; // do not process same hash twice or more
-            }
-            $linkified[] = $hash;
-
-            // replace single words only, so looking for #Google we wont linkify >#Google<Reader
-            $text = preg_replace(
-                '/#\b' . $hash . '\b/',
-                sprintf(
-                    '<a href="https://twitter.com/search?q=%%23%2$s&src=hash">#%1$s</a>',
-                    $hash,
-                    urlencode($hash)
-                ),
-                $text
-            );
-        }
-
-        // user_mentions
-        $linkified = array();
-        foreach ($tweetObject->entities->user_mentions as $userMention) {
-            $name = $userMention->name;
-            $screenName = $userMention->screen_name;
-
-            if (in_array($screenName, $linkified)) {
-                continue; // do not process same user mention twice or more
-            }
-            $linkified[] = $screenName;
-
-            // replace single words only, so looking for @John we wont linkify >@John<Snow
-            $text = preg_replace(
-                '/@\b' . $screenName . '\b/',
-                sprintf(
-                    '<a href="https://www.twitter.com/%1$s" title="%2$s">@%1$s</a>',
-                    $screenName,
-                    $name
-                ),
-                $text
-            );
-        }
-
-        // urls
-        $linkified = array();
-        foreach ($tweetObject->entities->urls as $url) {
-            $url = $url->url;
-
-            if (in_array($url, $linkified)) {
-                continue; // do not process same url twice or more
-            }
-            $linkified[] = $url;
-
-            $text = str_replace($url, sprintf('<a href="%1$s">%1$s</a>', $url), $text);
-        }
-
-        return $text;
     }
 }
