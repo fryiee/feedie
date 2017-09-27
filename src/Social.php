@@ -27,7 +27,7 @@ class Social
     /**
      * @var int
      */
-    private $cacheNumber;
+    private $cacheAmount;
 
     /**
      * @var int
@@ -40,17 +40,97 @@ class Social
      */
     public function __construct($count = 10)
     {
-        $this->count = $count;
-        $this->useCache = (!is_null(getenv('FEEDIE_CACHE')) ? boolval(getenv('FEEDIE_CACHE')) : true);
-        $this->cacheNumber = intval(getenv('FEEDIE_CACHE_AMOUNT')) ?: 20;
-        $this->cacheTime = intval(getenv('FEEDIE_CACHE_TIME')) ?: 60;
+        $this->setCount($count);
+        $this->setUseCache(!is_null(getenv('FEEDIE_CACHE')) ? boolval(getenv('FEEDIE_CACHE')) : true);
+        $this->setCacheAmount(intval(getenv('FEEDIE_CACHE_AMOUNT')) ?: 20);
+        $this->setCacheTime(intval(getenv('FEEDIE_CACHE_TIME')) ?: 60);
 
         $cacheDir = getenv('FEEDIE_CACHE_DIR');
         if ($cacheDir && file_exists($cacheDir)) {
-            $this->cache = $cacheDir . '/feedie.json';
+            $this->setCache($cacheDir . '/feedie.json');
         } else {
-            $this->cache = (ini_get('upload_tmp_dir') ?: sys_get_temp_dir()) .'/feedie.json';
+            $this->setCache((ini_get('upload_tmp_dir') ?: sys_get_temp_dir()) .'/feedie.json');
         }
+    }
+
+    /**
+     * @return int
+     */
+    public function getCount()
+    {
+        return $this->count;
+    }
+
+    /**
+     * @param $count
+     */
+    public function setCount($count)
+    {
+        $this->count = $count;
+    }
+
+    /**
+     * @return bool
+     */
+    public function useCache()
+    {
+        return $this->useCache;
+    }
+
+    /**
+     * @param $useCache
+     */
+    public function setUseCache($useCache)
+    {
+        $this->useCache = $useCache;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCache()
+    {
+        return $this->cache;
+    }
+
+    /**
+     * @param $cache
+     */
+    public function setCache($cache)
+    {
+        $this->cache = $cache;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCacheTime()
+    {
+        return $this->cacheTime;
+    }
+
+    /**
+     * @param $cacheTime
+     */
+    public function setCacheTime($cacheTime)
+    {
+        $this->cacheTime = $cacheTime;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCacheAmount()
+    {
+        return $this->cacheAmount;
+    }
+
+    /**
+     * @param $cacheAmount
+     */
+    public function setCacheAmount($cacheAmount)
+    {
+        $this->cacheAmount = $cacheAmount;
     }
 
     /**
@@ -60,7 +140,7 @@ class Social
      */
     public function getFeed()
     {
-        return ($this->useCache ? $this->getCachedFeed() : $this->makeFeed());
+        return ($this->useCache() ? $this->getCachedFeed() : $this->makeFeed());
     }
 
     /**
@@ -70,9 +150,13 @@ class Social
      */
     private function getCachedFeed()
     {
-        $cache = json_decode(file_get_contents($this->cache), true);
+        try {
+            $cache = file_get_contents($this->getCache());
+        } catch (\Exception $e) {
+            $cache = false;
+        }
 
-        return $cache ?: $this->makeFeed();
+        return $cache ? json_decode($cache, true) : $this->makeFeed();
     }
 
     /**
@@ -82,13 +166,32 @@ class Social
      */
     private function makeFeed()
     {
-        // do social media loop
-        $twitter = (new Twitter($this->count / 2))->getFeed();
-        $instagram = (new Instagram($this->count / 2))->getFeed();
+        $twitter = (new Twitter($this->getCount() / 2))->getFeed();
+        $instagram = (new Instagram($this->getCount() / 2))->getFeed();
 
-        $combinedFeed = array_merge($twitter, $instagram);
+        $feed = $this->sortFeed(array_merge($twitter, $instagram));
 
-        usort($combinedFeed, function ($item1, $item2) {
+        if ($this->useCache()) {
+            if (!file_exists($this->getCache()) || filemtime($this->getCache()) + $this->getCacheTime() < time()) {
+                file_put_contents(
+                    $this->getCache(),
+                    json_encode(array_slice($feed, 0, $this->getCacheAmount()))
+                );
+            }
+        }
+
+        return $feed;
+    }
+
+    /**
+     * basic sort a feed by timestamp.
+     *
+     * @param $feed
+     * @return array
+     */
+    private function sortFeed($feed)
+    {
+        usort($feed, function ($item1, $item2) {
             if ($item1['date'] == $item2['date']) {
                 return 0;
             }
@@ -96,12 +199,6 @@ class Social
             return $item1['date'] > $item2['date'] ? -1 : 1;
         });
 
-        if ($this->useCache) {
-            if (!file_exists($this->cache) || filemtime($this->cache) + $this->cacheTime < time()) {
-                file_put_contents($this->cache, json_encode($combinedFeed));
-            }
-        }
-
-        return $combinedFeed;
+        return $feed;
     }
 }

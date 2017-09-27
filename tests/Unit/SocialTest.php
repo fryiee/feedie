@@ -2,9 +2,8 @@
 
 class SocialTest extends \PHPUnit\Framework\TestCase
 {
-    public function testUnit()
+    public function testFeedReturn()
     {
-        // @todo scaffolded.
-        $this->markTestIncomplete('Implement after working out guzzle testing.');
+        $this->markTestIncomplete('Need to refactor to properly mock responses.');
     }
 }

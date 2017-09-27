@@ -6,8 +6,6 @@
  */
 interface FeedInterface
 {
-    public function getFeed();
-
     public function getClient();
 
     public function setClient($client);
@@ -15,4 +13,10 @@ interface FeedInterface
     public function getBaseUri();
 
     public function setBaseUri($baseUri);
+
+    public function getCount();
+
+    public function setCount($count);
+
+    public function getFeed();
 }

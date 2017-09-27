@@ -1,6 +1,7 @@
 <?php namespace Fryiee\Feedie\API;
 
 use Fryiee\Feedie\API\Contract\FeedInterface;
+use Fryiee\Feedie\API\Util\Normaliser;
 use GuzzleHttp\Client;
 
 /**
@@ -22,12 +23,7 @@ class Instagram implements FeedInterface
     private $client;
 
     /**
-     * @var
-     */
-    private $user;
-
-    /**
-     * @var
+     * @var string
      */
     private $token;
 
@@ -42,36 +38,11 @@ class Instagram implements FeedInterface
      */
     public function __construct($count = 5)
     {
-        $this->user = getenv('FEEDIE_INSTAGRAM_USER');
-        $this->token = getenv('FEEDIE_INSTAGRAM_TOKEN');
-        $this->count = intval($count);
+        $this->setCount($count);
+        $this->setToken(strval(getenv('FEEDIE_INSTAGRAM_TOKEN')));
 
         $this->setBaseUri('https://api.instagram.com/v1/users/');
         $this->setClient(new Client(['base_uri' => $this->getBaseUri()]));
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getFeed()
-    {
-        try {
-            $response = $this->getClient()->get(
-                'media/recent',
-                [
-                    'query' => [
-                        'access_token' => $this->token,
-                        'count' => $this->count
-                    ]
-                ]
-            );
-
-            $json = json_decode($response->getBody()->getContents());
-
-            return (isset($json->data) ? $this->normaliseFeed($json->data) : false);
-        } catch (\Exception $e) {
-            return false;
-        }
     }
 
     /**
@@ -107,27 +78,58 @@ class Instagram implements FeedInterface
     }
 
     /**
-     * Normalise an instagram feed.
-     *
-     * @param $feed
-     * @return array
+     * @return int
      */
-    private function normaliseFeed($feed)
+    public function getCount()
     {
-        $normalisedFeed = [];
+        return $this->count;
+    }
 
-        if (count($feed) > 0) {
-            foreach ($feed as $post) {
-                $normalisedFeed[] = [
-                    'id' => $post->id,
-                    'type' => 'instagram',
-                    'date' => intval($post->created_time),
-                    'link' => 'https://twitter.com/'.$post->user->screen_name.'/status/'.$post->id,
-                    'image' => $post->images->standard_resolution->url
-                ];
-            }
+    /**
+     * @param $count
+     */
+    public function setCount($count)
+    {
+        $this->count = $count;
+    }
+
+    /**
+     * @return string
+     */
+    public function getToken()
+    {
+        return $this->token;
+    }
+
+    /**
+     * @param string $token
+     */
+    public function setToken($token)
+    {
+        $this->token = $token;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFeed()
+    {
+        $response = $this->getClient()->get(
+            'self/media/recent',
+            [
+                'query' => [
+                    'access_token' => $this->getToken(),
+                    'count' => $this->getCount()
+                ]
+            ]
+        );
+
+        if ($response->getStatusCode() != 200) {
+            return false;
         }
 
-        return $normalisedFeed;
+        $json = json_decode($response->getBody()->getContents());
+
+        return Normaliser::normalise('instagram', $json->data);
     }
 }
