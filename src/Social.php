@@ -154,7 +154,15 @@ class Social
             $cache = json_decode(file_get_contents($this->getCache()), true);
         }
 
-        return isset($cache) ? $cache : $this->makeFeed();
+        if (isset($cache) && count($cache) >= $this->getCount()) {
+            if (count($cache) > $this->getCount()) {
+                return array_slice($cache, 0, $this->getCount());
+            } else {
+                return $cache;
+            }
+        } else {
+            return $this->makeFeed();
+        }
     }
 
     /**
@@ -164,8 +172,9 @@ class Social
      */
     private function makeFeed()
     {
-        $twitter = (new Twitter($this->getCount() / 2))->getFeed();
-        $instagram = (new Instagram($this->getCount() / 2))->getFeed();
+        $half = round($this->getCount() / 2, PHP_ROUND_HALF_UP);
+        $twitter = (new Twitter($half))->getFeed();
+        $instagram = (new Instagram($half))->getFeed();
 
         $feed = $this->sortFeed(array_merge($twitter, $instagram));
 
@@ -176,6 +185,10 @@ class Social
                     json_encode(array_slice($feed, 0, $this->getCacheAmount()))
                 );
             }
+        }
+
+        if (count($feed) > $this->getCount()) {
+            $feed = array_slice($feed, 0, $this->getCount());
         }
 
         return $feed;
