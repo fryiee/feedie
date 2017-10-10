@@ -35,11 +35,18 @@ class Social
     private $cacheTime;
 
     /**
+     * @var bool
+     */
+    private $alternate;
+
+    /**
      * Social constructor.
      * @param int $count
+     * @param bool $alternate
      */
-    public function __construct($count = 10)
+    public function __construct($count = 10, $alternate = false)
     {
+        $this->setAlternate($alternate);
         $this->setCount($count);
         $this->setUseCache(!is_null(getenv('FEEDIE_CACHE')) ? boolval(getenv('FEEDIE_CACHE')) : true);
         $this->setCacheAmount(intval(getenv('FEEDIE_CACHE_AMOUNT')) ?: 20);
@@ -51,6 +58,16 @@ class Social
         } else {
             $this->setCache((ini_get('upload_tmp_dir') ?: sys_get_temp_dir()) .'/feedie.json');
         }
+    }
+
+    public function getAlternate()
+    {
+        return $this->alternate;
+    }
+
+    public function setAlternate($alternate)
+    {
+        $this->alternate = $alternate;
     }
 
     /**
@@ -176,7 +193,7 @@ class Social
         $twitter = (new Twitter($half))->getFeed();
         $instagram = (new Instagram($half))->getFeed();
 
-        $feed = $this->sortFeed(array_merge($twitter, $instagram));
+        $feed = $this->sortFeed($twitter, $instagram);
 
         if ($this->useCache()) {
             if (!file_exists($this->getCache()) || filemtime($this->getCache()) + $this->getCacheTime() < time()) {
@@ -195,20 +212,31 @@ class Social
     }
 
     /**
-     * basic sort a feed by timestamp.
-     *
-     * @param $feed
-     * @return array
+     * @param $twitter
+     * @param $instagram
+     * @return array|mixed
      */
-    private function sortFeed($feed)
+    private function sortFeed($twitter, $instagram)
     {
-        usort($feed, function ($item1, $item2) {
-            if ($item1['date'] == $item2['date']) {
-                return 0;
+        if ($this->getAlternate()) {
+            // we know that we can grab them one by one and they'll be the same size anyway
+            $feed = [];
+            $toggle = $this->getAlternate();
+            $total = count($twitter) + count($instagram);
+            for ($x = 0; $x < $total; $x++) {
+                $feed[] = array_shift(${$toggle});
+                $toggle = ($toggle == 'twitter' ? 'instagram' : 'twitter');
             }
+        } else {
+            $feed = array_merge($twitter, $instagram);
+            usort($feed, function ($item1, $item2) {
+                if ($item1['date'] == $item2['date']) {
+                    return 0;
+                }
 
-            return $item1['date'] > $item2['date'] ? -1 : 1;
-        });
+                return $item1['date'] > $item2['date'] ? -1 : 1;
+            });
+        }
 
         return $feed;
     }
