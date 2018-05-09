@@ -128,11 +128,15 @@ class Twitter implements FeedInterface
      */
     public function getFeed()
     {
+        //due to twitter api counting their items before they exclude the replies, if exclude replies is set
+        //we're arbitrarily asking for 5x the number of posts we need in hope that we can then get the count we're
+        //after out of the results
+        $retrieveCount = $this->getExcludeReplies() ? $this->getCount() * 5 : $this->getCount();
         $response = $this->getClient()->get(
             'statuses/user_timeline.json',
             [
                 'query' => [
-                    'count' => $this->getCount(),
+                    'count' => $retrieveCount,
                     'exclude_replies' => $this->getExcludeReplies()
                 ]
             ]
@@ -144,6 +148,11 @@ class Twitter implements FeedInterface
 
         $json = json_decode($response->getBody()->getContents());
 
+        if ($this->getExcludeReplies()) {
+            $json = array_slice($json, 0, $this->getCount());
+        }
+
         return Normaliser::normalise('twitter', $json);
     }
+
 }
