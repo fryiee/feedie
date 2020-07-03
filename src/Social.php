@@ -218,7 +218,7 @@ class Social
      */
     private function sortFeed($twitter, $instagram)
     {
-        if ($this->getAlternate()) {
+        if ($this->getAlternate() && count($twitter) == count($instagram)) {
             // we know that we can grab them one by one and they'll be the same size anyway
             $feed = [];
             $toggle = $this->getAlternate();

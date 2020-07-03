@@ -143,7 +143,7 @@ class Twitter implements FeedInterface
         );
 
         if ($response->getStatusCode() != 200) {
-            return false;
+            return [];
         }
 
         $json = json_decode($response->getBody()->getContents());

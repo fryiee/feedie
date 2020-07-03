@@ -125,11 +125,11 @@ class Instagram implements FeedInterface
                 ]
             );
         } catch (\Exception $e) {
-            return false;
+            return [];
         }
 
         if ($response->getStatusCode() != 200) {
-            return false;
+            return [];
         }
 
         $json = json_decode($response->getBody()->getContents());
