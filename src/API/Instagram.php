@@ -41,7 +41,7 @@ class Instagram implements FeedInterface
         $this->setCount($count);
         $this->setToken(strval(getenv('FEEDIE_INSTAGRAM_TOKEN')));
 
-        $this->setBaseUri('https://api.instagram.com/v1/users/');
+        $this->setBaseUri('https://graph.instagram.com/me/media/');
         $this->setClient(new Client(['base_uri' => $this->getBaseUri()]));
     }
 
@@ -114,15 +114,19 @@ class Instagram implements FeedInterface
      */
     public function getFeed()
     {
-        $response = $this->getClient()->get(
-            'self/media/recent',
-            [
-                'query' => [
-                    'access_token' => $this->getToken(),
-                    'count' => $this->getCount()
+        try {
+            $response = $this->getClient()->get(
+                'me/media',
+                [
+                    'query' => [
+                        'access_token' => $this->getToken(),
+                        'count' => $this->getCount()
+                    ]
                 ]
-            ]
-        );
+            );
+        } catch (\Exception $e) {
+            return false;
+        }
 
         if ($response->getStatusCode() != 200) {
             return false;
