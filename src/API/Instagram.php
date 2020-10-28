@@ -120,7 +120,8 @@ class Instagram implements FeedInterface
                 [
                     'query' => [
                         'access_token' => $this->getToken(),
-                        'count' => $this->getCount()
+                        'limit' => $this->getCount(),
+                        'fields' => 'media_url,media_type,caption,permalink,thumbnail_url'
                     ]
                 ]
             );
