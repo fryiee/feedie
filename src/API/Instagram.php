@@ -41,7 +41,7 @@ class Instagram implements FeedInterface
         $this->setCount($count);
         $this->setToken(strval(getenv('FEEDIE_INSTAGRAM_TOKEN')));
 
-        $this->setBaseUri('https://graph.instagram.com/me/media/');
+        $this->setBaseUri('https://graph.instagram.com/');
         $this->setClient(new Client(['base_uri' => $this->getBaseUri()]));
     }
 
@@ -90,7 +90,7 @@ class Instagram implements FeedInterface
      */
     public function setCount($count)
     {
-        $this->count = $count;
+        $this->count = floor($count);
     }
 
     /**
@@ -121,7 +121,7 @@ class Instagram implements FeedInterface
                     'query' => [
                         'access_token' => $this->getToken(),
                         'limit' => $this->getCount(),
-                        'fields' => 'media_url,media_type,caption,permalink,thumbnail_url'
+                        'fields' => 'media_url,media_type,caption,permalink,thumbnail_url,timestamp'
                     ]
                 ]
             );

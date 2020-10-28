@@ -54,11 +54,11 @@ class Normaliser
         return [
             'id' => $post->id,
             'type' => 'instagram',
-            'date' => intval($post->created_time),
-            'link' => $post->link,
-            'text' => null,
-            'raw_text' => null,
-            'image' => $post->images->standard_resolution->url
+            'date' => strtotime($post->timestamp),
+            'link' => $post->permalink,
+            'text' => $post->caption,
+            'raw_text' => $post->caption,
+            'image' => $post->media_url
         ];
     }
 }
